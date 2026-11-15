@@ -105,6 +105,32 @@
     galleryGrid.appendChild(a);
   });
 
+  /* ---------- "View more": show only the first few photos / clippings ---------- */
+  var small = window.matchMedia('(max-width: 600px)').matches;
+  var MORE = [
+    { grid: galleryGrid, btn: document.getElementById('galleryMore'), limit: small ? 6 : 12, open: false,
+      hi: ['और फ़ोटो देखें', 'कम फ़ोटो दिखाएं'], en: ['View more photos', 'Show fewer photos'] },
+    { grid: mediaGrid, btn: document.getElementById('mediaMore'), limit: small ? 4 : 8, open: false,
+      hi: ['और समाचार देखें', 'कम समाचार दिखाएं'], en: ['View more news', 'Show less news'] }
+  ];
+  function applyMore(m) {
+    var items = Array.prototype.filter.call(m.grid.children, function (x) { return !x.classList.contains('hide'); });
+    Array.prototype.forEach.call(m.grid.children, function (x) { x.classList.remove('over'); });
+    var extra = items.length - m.limit;
+    if (!m.open) items.slice(m.limit).forEach(function (x) { x.classList.add('over'); });
+    m.btn.hidden = extra <= 0;
+    var t = (lang === 'en' ? m.en : m.hi)[m.open ? 1 : 0];
+    m.btn.textContent = m.open ? '▲ ' + t : t + ' (+' + extra + ') ▼';
+  }
+  function refreshMore() { MORE.forEach(applyMore); }
+  MORE.forEach(function (m) {
+    m.btn.addEventListener('click', function () {
+      m.open = !m.open;
+      applyMore(m);
+      if (!m.open) m.grid.closest('section').scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
   document.querySelectorAll('.filter').forEach(function (btn) {
     btn.addEventListener('click', function () {
       document.querySelectorAll('.filter').forEach(function (b) { b.classList.remove('active'); });
@@ -113,6 +139,8 @@
       galleryGrid.querySelectorAll('.g-item').forEach(function (item) {
         item.classList.toggle('hide', f !== 'all' && item.getAttribute('data-cat') !== f);
       });
+      MORE[0].open = false;
+      applyMore(MORE[0]);
     });
   });
 
@@ -132,6 +160,7 @@
     });
     document.getElementById('langToggle').setAttribute('aria-label', lang === 'en' ? 'हिंदी में देखें' : 'View in English');
     try { localStorage.setItem('nisdf-lang', lang); } catch (e) {}
+    refreshMore();
   }
   document.getElementById('langToggle').addEventListener('click', function () {
     setLang(lang === 'en' ? 'hi' : 'en');
